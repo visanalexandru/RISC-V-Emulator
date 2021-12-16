@@ -20,8 +20,7 @@ def get_two_complement(n, bits):  # Returns the number in two's complement using
 
 
 def ignore_overflow(n, bits):  # Keeps only the first bits of the given number
-    bitmask = (1 << bits) - 1
-    return n & bitmask
+    return n & bit_mask_prefix(bits)
 
 
 # This class implements the functionality of a RISC-V 32-bit cpu
@@ -40,8 +39,7 @@ class Processor:
 
     def decode(self, instruction):  # Decodes the instruction and returns the instruction operands
 
-        opcode_mask = bit_mask_prefix(7)  # used to mask the opcode
-        opcode = instruction & opcode_mask
+        opcode = instruction & bit_mask_prefix(7)
         instruction >>= 7  # get rid of the first 7 bits that denote the opcode
 
         if opcode == OP_IMM:
@@ -54,23 +52,19 @@ class Processor:
             return self.decode_jal(instruction)
 
     def decode_lui(self, instruction):  # Decodes a lui instruction
-        rd_mask = bit_mask_prefix(5)
-        rd = instruction & rd_mask
+        rd = instruction & bit_mask_prefix(5)
         instruction >>= 5
 
-        imm_mask = bit_mask_prefix(20)
-        imm = instruction & imm_mask
+        imm = instruction & bit_mask_prefix(20)
         instruction >>= 20
 
         return [OP_LUI, rd, imm]
 
     def decode_auipc(self, instruction):  # Decodes an auipc instruction
-        rd_mask = bit_mask_prefix(5)
-        rd = instruction & rd_mask
+        rd = instruction & bit_mask_prefix(5)
         instruction >>= 5
 
-        imm_mask = bit_mask_prefix(20)
-        imm = instruction & imm_mask
+        imm = instruction & bit_mask_prefix(20)
         instruction >>= 20
 
         return [OP_AUIPC, rd, imm]
