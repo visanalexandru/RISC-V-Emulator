@@ -10,6 +10,11 @@ OP_JAL = 0b1101111
 # JALR instruction opcode
 OP_JALR = 0b1100111
 
+# BRANCH instruction opcode
+OP_BRANCH = 0b1100011
+BRANCH_FUNCT3_BEQ = 0b000
+BRANCH_FUNCT3_BNE = 0b001
+
 # IMM instruction opcode
 OP_IMM = 0b0010011
 IMM_FUNCT3_ADDI = 0
@@ -58,6 +63,8 @@ class Processor:
             return self.decode_jal(instruction)
         elif opcode == OP_JALR:
             return self.decode_jalr(instruction)
+        elif opcode == OP_BRANCH:
+            return self.decode_branch(instruction)
         elif opcode == OP_IMM:
             return self.decode_imm(instruction)
         else:
@@ -117,6 +124,32 @@ class Processor:
         offset = get_two_complement(imm_11_0, 12)
 
         return [OP_JALR, rd, funct3, rs1, offset]
+
+    def decode_branch(self, instruction):
+        imm_11 = instruction & bit_mask_prefix(1)
+        instruction >>= 1
+
+        imm_4_1 = instruction & bit_mask_prefix(4)
+        instruction >>= 4
+
+        funct3 = instruction & bit_mask_prefix(3)
+        instruction >>= 3
+
+        rs1 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        rs2 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        imm_10_5 = instruction & bit_mask_prefix(6)
+        instruction >>= 6
+
+        imm_12 = instruction & bit_mask_prefix(1)
+        instruction >>= 1
+
+        offset = get_two_complement(imm_4_1 | (imm_10_5 << 4) | (imm_11 << 10) | (imm_12 << 11), 12)
+
+        return [OP_BRANCH, offset, funct3, rs1, rs2]
 
     def decode_imm(self, instruction):  # Decodes an imm instruction
         rd = instruction & bit_mask_prefix(5)
