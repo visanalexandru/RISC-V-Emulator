@@ -104,7 +104,7 @@ class Processor:
         jal_20 = bit_mask_prefix(1) & instruction
         instruction >>= 1
 
-        offset = get_two_complement(jal_10_1 | (jal_11 << 10) | (jal_19_12 << 11) | (jal_20 << 19), 20)
+        offset = jal_10_1 | (jal_11 << 10) | (jal_19_12 << 11) | (jal_20 << 19)
 
         return [OP_JAL, rd, offset]
 
@@ -121,7 +121,7 @@ class Processor:
         imm_11_0 = instruction & bit_mask_prefix(12)
         instruction >>= 12
 
-        offset = get_two_complement(imm_11_0, 12)
+        offset = imm_11_0
 
         return [OP_JALR, rd, funct3, rs1, offset]
 
@@ -147,7 +147,7 @@ class Processor:
         imm_12 = instruction & bit_mask_prefix(1)
         instruction >>= 1
 
-        offset = get_two_complement(imm_4_1 | (imm_10_5 << 4) | (imm_11 << 10) | (imm_12 << 11), 12)
+        offset = imm_4_1 | (imm_10_5 << 4) | (imm_11 << 10) | (imm_12 << 11)
 
         return [OP_BRANCH, offset, funct3, rs1, rs2]
 
@@ -198,7 +198,7 @@ class Processor:
     # following the jump (pc+4) into the destination register
     def execute_jal(self, instruction):
         rd = instruction[1]
-        offset = instruction[2] * 2
+        offset = get_two_complement(instruction[2], 20) * 2
         self.pc = ignore_overflow(self.pc + offset, self.architecture)
         self.registers[rd] = self.pc + 4
 
