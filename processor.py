@@ -7,6 +7,9 @@ OP_AUIPC = 0b0010111
 # JAL instruction opcode
 OP_JAL = 0b1101111
 
+# JALR instruction opcode
+OP_JALR = 0b1100111
+
 # IMM instruction opcode
 OP_IMM = 0b0010011
 IMM_FUNCT3_ADDI = 0
@@ -53,10 +56,12 @@ class Processor:
             return self.decode_auipc(instruction)
         elif opcode == OP_JAL:
             return self.decode_jal(instruction)
+        elif opcode == OP_JALR:
+            return self.decode_jalr(instruction)
         elif opcode == OP_IMM:
             return self.decode_imm(instruction)
         else:
-            raise NotImplementedError(f"Unknown Opcode: {opcode}")
+            raise NotImplementedError(f"Cannot decode opcode: {opcode}")
 
     def decode_lui(self, instruction):  # Decodes a lui instruction
         rd = instruction & bit_mask_prefix(5)
@@ -96,6 +101,23 @@ class Processor:
 
         return [OP_JAL, rd, offset]
 
+    def decode_jalr(self, instruction):
+        rd = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        funct3 = instruction & bit_mask_prefix(3)
+        instruction >>= 3
+
+        rs1 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        imm_11_0 = instruction & bit_mask_prefix(12)
+        instruction >>= 12
+
+        offset = get_two_complement(imm_11_0, 12)
+
+        return [OP_JALR, rd, funct3, rs1, offset]
+
     def decode_imm(self, instruction):  # Decodes an imm instruction
         rd = instruction & bit_mask_prefix(5)
         instruction >>= 5
@@ -106,10 +128,10 @@ class Processor:
         rs1 = instruction & bit_mask_prefix(5)
         instruction >>= 5
 
-        imm11_0 = instruction & bit_mask_prefix(12)
+        imm_11_0 = instruction & bit_mask_prefix(12)
         instruction >>= 12
 
-        return [OP_IMM, rd, funct3, rs1, imm11_0]
+        return [OP_IMM, rd, funct3, rs1, imm_11_0]
 
     # Overwrite the top 20 bits of the destination register and set the other 12 bits to zero
     def execute_lui(self, instruction):
