@@ -108,7 +108,7 @@ class Processor:
 
         return [OP_JAL, rd, offset]
 
-    def decode_jalr(self, instruction):
+    def decode_jalr(self, instruction):  # Decodes a jalr instruction
         rd = instruction & bit_mask_prefix(5)
         instruction >>= 5
 
@@ -125,7 +125,7 @@ class Processor:
 
         return [OP_JALR, rd, funct3, rs1, offset]
 
-    def decode_branch(self, instruction):
+    def decode_branch(self, instruction):  # Decodes a branch instruction
         imm_11 = instruction & bit_mask_prefix(1)
         instruction >>= 1
 
@@ -169,13 +169,13 @@ class Processor:
     # Overwrite the top 20 bits of the destination register and set the other 12 bits to zero
     def execute_lui(self, instruction):
         rd = instruction[1]
-        self.registers[rd] = instruction[2] << 12
+        self.registers[rd] = get_two_complement(instruction[2] << 12, self.architecture)
 
     # Build a 32 bit offset from the 20 bit immediate, add the offset to pc and save
     # the result in the destination register
     def execute_auipc(self, instruction):
         rd = instruction[1]
-        offset = instruction[2] << 12
+        offset = get_two_complement(instruction[2] << 12, self.architecture)
 
         self.pc = ignore_overflow(self.pc + offset, self.architecture)  # Add the offset to pc, and ignore the overflow
         self.registers[rd] = self.pc  # Store the result into rd
