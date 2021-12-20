@@ -166,6 +166,20 @@ class Processor:
 
         return [OP_IMM, rd, funct3, rs1, imm_11_0]
 
+    def execute(self, instruction):  # Executes the given instruction
+        opcode = instruction[0]
+        if opcode == OP_LUI:
+            self.execute_lui(instruction)
+        elif opcode == OP_AUIPC:
+            self.execute_auipc(instruction)
+        elif opcode == OP_JAL:
+            self.execute_jal(instruction)
+        else:
+            raise NotImplementedError(f"Cannot execute opcode: {opcode}")
+
+        # The x0 register is hardwired to zero, so reset it after execution
+        self.registers[0] = 0
+
     # Overwrite the top 20 bits of the destination register and set the other 12 bits to zero
     def execute_lui(self, instruction):
         rd = instruction[1]
@@ -179,6 +193,14 @@ class Processor:
 
         self.pc = ignore_overflow(self.pc + offset, self.architecture)  # Add the offset to pc, and ignore the overflow
         self.registers[rd] = self.pc  # Store the result into rd
+
+    # Add the offset (in multiples of 2 bytes) to the pc and store the address of the instruction
+    # following the jump (pc+4) into the destination register
+    def execute_jal(self, instruction):
+        rd = instruction[1]
+        offset = instruction[2] * 2
+        self.pc = ignore_overflow(self.pc + offset, self.architecture)
+        self.registers[rd] = self.pc + 4
 
     def debug_registers(self):
         for x in range(32):
