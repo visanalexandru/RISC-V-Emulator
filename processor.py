@@ -1,8 +1,15 @@
-OP_IMM = 0b0010011  # OP_IMM opcode
-IMM_FUNCT3_ADDI = 0
+# LUI instruction opcode
 OP_LUI = 0b0110111
+
+# AUIPC instruction opcode
 OP_AUIPC = 0b0010111
+
+# JAL instruction opcode
 OP_JAL = 0b1101111
+
+# IMM instruction opcode
+OP_IMM = 0b0010011
+IMM_FUNCT3_ADDI = 0
 
 
 def bit_mask_prefix(n):  # Returns a bitmask that masks the first n bits
@@ -29,8 +36,6 @@ class Processor:
     def __init__(self):
         self.architecture = 32  # how many bits per register
 
-        self.maximum_value = (1 << self.architecture) - 1  # The maximum value that can be put into a register
-
         self.num_registers = 32  # the number of registers in the cpu
 
         self.registers = [0] * 32  # the register file, from x0 to x31
@@ -42,14 +47,16 @@ class Processor:
         opcode = instruction & bit_mask_prefix(7)
         instruction >>= 7  # get rid of the first 7 bits that denote the opcode
 
-        if opcode == OP_IMM:
-            return self.decode_imm(instruction)
-        elif opcode == OP_LUI:
+        if opcode == OP_LUI:
             return self.decode_lui(instruction)
         elif opcode == OP_AUIPC:
             return self.decode_auipc(instruction)
         elif opcode == OP_JAL:
             return self.decode_jal(instruction)
+        elif opcode == OP_IMM:
+            return self.decode_imm(instruction)
+        else:
+            raise NotImplementedError(f"Unknown Opcode: {opcode}")
 
     def decode_lui(self, instruction):  # Decodes a lui instruction
         rd = instruction & bit_mask_prefix(5)
@@ -68,21 +75,6 @@ class Processor:
         instruction >>= 20
 
         return [OP_AUIPC, rd, imm]
-
-    def decode_imm(self, instruction):  # Decodes an imm instruction
-        rd = instruction & bit_mask_prefix(5)   # read rd
-        instruction >>= 5
-
-        funct3 = instruction & bit_mask_prefix(3)   # read funct3
-        instruction >>= 3
-
-        rs1 = instruction & bit_mask_prefix(5)   # read rs1
-        instruction >>= 5
-
-        imm = get_two_complement(instruction & bit_mask_prefix(12), 12)   # read imm[11:0]
-        instruction >>= 12
-
-        return [OP_IMM, rd, funct3, rs1, imm]
 
     def decode_jal(self, instruction):  # Decodes a jal instruction
         rd = instruction & bit_mask_prefix(5)
@@ -104,6 +96,21 @@ class Processor:
 
         return [OP_JAL, rd, offset]
 
+    def decode_imm(self, instruction):  # Decodes an imm instruction
+        rd = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        funct3 = instruction & bit_mask_prefix(3)
+        instruction >>= 3
+
+        rs1 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        imm11_0 = instruction & bit_mask_prefix(12)
+        instruction >>= 12
+
+        return [OP_IMM, rd, funct3, rs1, imm11_0]
+
     # Overwrite the top 20 bits of the destination register and set the other 12 bits to zero
     def execute_lui(self, instruction):
         rd = instruction[1]
@@ -115,8 +122,8 @@ class Processor:
         rd = instruction[1]
         offset = instruction[2] << 12
 
-        self.pc = ignore_overflow(self.pc+offset, self.architecture)   # Add the offset to pc, and ignore the overflow
-        self.registers[rd] = self.pc   # Store the result into rd
+        self.pc = ignore_overflow(self.pc + offset, self.architecture)  # Add the offset to pc, and ignore the overflow
+        self.registers[rd] = self.pc  # Store the result into rd
 
     def debug_registers(self):
         for x in range(32):
