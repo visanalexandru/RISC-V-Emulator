@@ -174,6 +174,8 @@ class Processor:
             self.execute_auipc(instruction)
         elif opcode == OP_JAL:
             self.execute_jal(instruction)
+        elif opcode == OP_IMM:
+            self.execute_imm(instruction)
         else:
             raise NotImplementedError(f"Cannot execute opcode: {opcode}")
 
@@ -201,6 +203,22 @@ class Processor:
         offset = get_two_complement(instruction[2], 20) * 2
         self.pc = ignore_overflow(self.pc + offset, self.architecture)
         self.registers[rd] = self.pc + 4
+
+    # Execute the given imm instruction by computing the corresponding operation given by funct3
+    def execute_imm(self, instruction):
+        rd = instruction[1]
+        funct3 = instruction[2]
+        rs1 = instruction[3]
+        immediate = instruction[4]
+
+        if funct3 == IMM_FUNCT3_ADDI:
+            # Add the sign extended 12-bit immediate to rs1. Ignore overflow and store the result into rd
+            value = get_two_complement(immediate, 12)
+            result = ignore_overflow(self.registers[rs1] + value, self.architecture)
+            result = get_two_complement(result, self.architecture)
+            self.registers[rd] = result
+        else:
+            raise NotImplementedError(f"Cannot execute funct3: {funct3}")
 
     def debug_registers(self):
         for x in range(32):
