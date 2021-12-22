@@ -50,6 +50,11 @@ class Processor:
 
         self.pc = 0  # the program counter, holds the address of the current instruction
 
+        self.instruction_size = 4  # how many bytes per instruction
+
+    def advance_pc(self):
+        self.pc = ignore_overflow(self.pc + self.instruction_size, self.architecture)
+
     def decode(self, instruction):  # Decodes the instruction and returns the instruction operands
 
         opcode = instruction & bit_mask_prefix(7)
@@ -176,6 +181,8 @@ class Processor:
             self.execute_jal(instruction)
         elif opcode == OP_IMM:
             self.execute_imm(instruction)
+        elif opcode == OP_BRANCH:
+            self.execute_branch(instruction)
         else:
             raise NotImplementedError(f"Cannot execute opcode: {opcode}")
 
@@ -186,6 +193,7 @@ class Processor:
     def execute_lui(self, instruction):
         rd = instruction[1]
         self.registers[rd] = get_two_complement(instruction[2] << 12, self.architecture)
+        self.advance_pc()
 
     # Build a 32 bit offset from the 20 bit immediate, add the offset to pc and save
     # the result in the destination register
@@ -220,6 +228,8 @@ class Processor:
 
         if jump:
             self.pc = ignore_overflow(self.pc + offset, self.architecture)
+        else:
+            self.advance_pc()
 
     # Execute the given imm instruction by computing the corresponding operation given by funct3
     def execute_imm(self, instruction):
@@ -236,9 +246,10 @@ class Processor:
             self.registers[rd] = result
         else:
             raise NotImplementedError(f"Cannot execute funct3: {funct3}")
+        self.advance_pc()
 
     def debug_registers(self):
         for x in range(32):
             print(f"x{x}", self.registers[x])
 
-        print(f"pc:{self.pc}")
+        print(f"pc:{hex(self.pc)}")
