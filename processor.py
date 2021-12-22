@@ -204,6 +204,23 @@ class Processor:
         self.pc = ignore_overflow(self.pc + offset, self.architecture)
         self.registers[rd] = self.pc + 4
 
+    # Executes the corresponding branch instruction given by funct3
+    def execute_branch(self, instruction):
+        offset = get_two_complement(instruction[1], 12) * 2
+        funct3 = instruction[2]
+        rs1 = instruction[3]
+        rs2 = instruction[4]
+
+        jump = False  # Set this flag accordingly based on funct3
+
+        if funct3 == BRANCH_FUNCT3_BEQ:
+            jump = self.registers[rs1] == self.registers[rs2]
+        elif funct3 == BRANCH_FUNCT3_BNE:
+            jump = self.registers[rs1] != self.registers[rs2]
+
+        if jump:
+            self.pc = ignore_overflow(self.pc + offset, self.architecture)
+
     # Execute the given imm instruction by computing the corresponding operation given by funct3
     def execute_imm(self, instruction):
         rd = instruction[1]
