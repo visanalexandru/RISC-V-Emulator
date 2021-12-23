@@ -19,6 +19,41 @@ BRANCH_FUNCT3_BNE = 0b001
 OP_IMM = 0b0010011
 IMM_FUNCT3_ADDI = 0
 
+# Assembler mnemonics for the registers
+mnemonics = ["zero",
+             "ra",
+             "sp",
+             "gp",
+             "tp",
+             "t0",
+             "t1",
+             "t2",
+             "s0",
+             "s1",
+             "a0",
+             "a1",
+             "a2",
+             "a3",
+             "a4",
+             "a5",
+             "a6",
+             "a7",
+             "s2",
+             "s3",
+             "s4",
+             "s5",
+             "s6",
+             "s7",
+             "s8",
+             "s9",
+             "s10",
+             "s11",
+             "t3",
+             "t4",
+             "t5",
+             "t6"
+             ]
+
 
 def bit_mask_prefix(n):  # Returns a bitmask that masks the first n bits
     return (1 << n) - 1
@@ -250,6 +285,6 @@ class Processor:
 
     def debug_registers(self):
         for x in range(32):
-            print(f"x{x}", self.registers[x])
+            print(f"{mnemonics[x]}", self.registers[x])
 
         print(f"pc:{hex(self.pc)}")
