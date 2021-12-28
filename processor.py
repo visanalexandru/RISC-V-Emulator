@@ -98,6 +98,23 @@ class Processor:
     def advance_pc(self):
         self.pc = ignore_overflow(self.pc + self.instruction_size, self.architecture)
 
+    def cycle(self):
+        try:
+            to_execute = system.memory[self.pc]  # Fetch a new instruction
+        except KeyError:
+            print(f"Skipping over memory address:{self.pc}")
+            self.advance_pc()
+        else:
+            decoded = self.decode(to_execute)  # Decode the instruction
+
+            print(f"Execute {decoded} , OPCODE: {bin(decoded[0])}")
+
+            self.execute(decoded)  # Execute the instruction
+
+            self.debug_registers()  # Debug registers to stdout
+
+            input()
+
     def decode(self, instruction):  # Decodes the instruction and returns the instruction operands
 
         opcode = instruction & bit_mask_prefix(7)
