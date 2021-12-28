@@ -1,3 +1,5 @@
+from system import system
+
 # LUI instruction opcode
 OP_LUI = 0b0110111
 
@@ -20,6 +22,10 @@ OP_IMM = 0b0010011
 IMM_FUNCT3_ADDI = 0
 IMM_FUNCT3_SLTI = 0b010
 IMM_FUNCT3_SLTIU = 0b011
+
+# SYSTEM instruction opcode
+OP_SYSTEM = 0b1110011
+SYSTEM_FUNCT12_ECALL = 0b000000000000
 
 # Assembler mnemonics for the registers
 mnemonics = ["zero",
@@ -109,6 +115,8 @@ class Processor:
             return self.decode_branch(instruction)
         elif opcode == OP_IMM:
             return self.decode_imm(instruction)
+        elif opcode == OP_SYSTEM:
+            return self.decode_system(instruction)
         else:
             raise NotImplementedError(f"Cannot decode opcode: {opcode}")
 
@@ -208,6 +216,22 @@ class Processor:
 
         return [OP_IMM, rd, funct3, rs1, imm_11_0]
 
+    # Decodes a system instruction. We parse rd,funct3 and rs1 even if they are unused.
+    def decode_system(self, instruction):
+        rd = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        funct3 = instruction & bit_mask_prefix(3)
+        instruction >>= 3
+
+        rs1 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        funct12 = instruction & bit_mask_prefix(12)
+        instruction >>= 12
+
+        return [OP_SYSTEM, funct12]  # Only funct12 is relevant for this instruction
+
     def execute(self, instruction):  # Executes the given instruction
         opcode = instruction[0]
         if opcode == OP_LUI:
@@ -220,6 +244,8 @@ class Processor:
             self.execute_imm(instruction)
         elif opcode == OP_BRANCH:
             self.execute_branch(instruction)
+        elif opcode == OP_SYSTEM:
+            self.execute_system(instruction)
         else:
             raise NotImplementedError(f"Cannot execute opcode: {opcode}")
 
@@ -305,6 +331,15 @@ class Processor:
 
         else:
             raise NotImplementedError(f"Cannot execute funct3: {funct3}")
+        self.advance_pc()
+
+    def execute_system(self, instruction):
+        funct12 = instruction[1]
+        if funct12 == SYSTEM_FUNCT12_ECALL:
+            system.call(self.registers[10:16])  # The parameters are passed through a0 to a5
+        else:
+            raise NotImplementedError(f"Cannot execute funct12: {funct12}")
+
         self.advance_pc()
 
     def debug_registers(self):

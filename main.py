@@ -1,4 +1,5 @@
 from processor import Processor
+from system import system
 import parser
 
 instructions = parser.parse("tests/rv32ui-v-beq.mc")
@@ -9,7 +10,7 @@ print(f"Start location: {hex(start_location)}")
 cpu = Processor()
 cpu.pc = start_location
 
-while True:
+while not system.terminate:
     try:
         instruction = instructions[cpu.pc]
         decoded = cpu.decode(instruction)
