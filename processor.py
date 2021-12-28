@@ -281,8 +281,8 @@ class Processor:
         rd = instruction[1]
         offset = get_two_complement(instruction[2] << 12, self.architecture)
 
-        self.pc = ignore_overflow(self.pc + offset, self.architecture)  # Add the offset to pc, and ignore the overflow
-        self.registers[rd] = self.pc  # Store the result into rd
+        self.registers[rd] = ignore_overflow(self.pc + offset, self.architecture)  # Store the result into rd
+        self.advance_pc()
 
     # Add the offset (in multiples of 2 bytes) to the pc and store the address of the instruction
     # following the jump (pc+4) into the destination register
