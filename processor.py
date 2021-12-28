@@ -18,6 +18,8 @@ BRANCH_FUNCT3_BNE = 0b001
 # IMM instruction opcode
 OP_IMM = 0b0010011
 IMM_FUNCT3_ADDI = 0
+IMM_FUNCT3_SLTI = 0b010
+IMM_FUNCT3_SLTIU = 0b011
 
 # Assembler mnemonics for the registers
 mnemonics = ["zero",
@@ -279,6 +281,28 @@ class Processor:
             result = ignore_overflow(self.registers[rs1] + value, self.architecture)
             result = get_two_complement(result, self.architecture)
             self.registers[rd] = result
+
+        elif funct3 == IMM_FUNCT3_SLTI:
+            # Set less than immediate, place the value 1 in rd if rs1 is less than the sign-extended immediate,
+            # else 0 is written to rd
+            value = get_two_complement(immediate, 12)
+            if self.registers[rs1] < value:
+                self.registers[rd] = 1
+            else:
+                self.registers[rd] = 0
+
+        elif funct3 == IMM_FUNCT3_SLTIU:
+            # Set less than unsigned immediate, similar to SLTI but sign-extends the immediate then
+            # treats it and the rs register as unsigned integers
+            value = get_two_complement(immediate, 12)
+            unsigned_immediate = value & bit_mask_prefix(self.architecture)
+            unsigned_register = self.registers[rs1] & bit_mask_prefix(self.architecture)
+
+            if unsigned_register < unsigned_immediate:
+                self.registers[rd] = 1
+            else:
+                self.registers[rd] = 0
+
         else:
             raise NotImplementedError(f"Cannot execute funct3: {funct3}")
         self.advance_pc()
