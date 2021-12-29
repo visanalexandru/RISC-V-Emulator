@@ -99,9 +99,8 @@ class Processor:
         self.pc = ignore_overflow(self.pc + self.instruction_size, self.architecture)
 
     def cycle(self):
-        try:
-            to_execute = system.memory[self.pc]  # Fetch a new instruction
-        except KeyError:
+        to_execute = system.memory.read_word(self.pc)  # Fetch a new instruction
+        if to_execute == 0:  # There is no instruction at the current address
             print(f"Skipping over memory address:{self.pc}")
             self.advance_pc()
         else:
@@ -350,6 +349,7 @@ class Processor:
             raise NotImplementedError(f"Cannot execute funct3: {funct3}")
         self.advance_pc()
 
+    # Executes a system call
     def execute_system(self, instruction):
         funct12 = instruction[1]
         if funct12 == SYSTEM_FUNCT12_ECALL:
