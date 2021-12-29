@@ -23,6 +23,10 @@ IMM_FUNCT3_ADDI = 0
 IMM_FUNCT3_SLTI = 0b010
 IMM_FUNCT3_SLTIU = 0b011
 
+# OP instruction opcode - integer register-register operations
+OP_OP = 0b0110011
+OP_FUNCT3_SRL = 0b101
+
 # SYSTEM instruction opcode
 OP_SYSTEM = 0b1110011
 SYSTEM_FUNCT12_ECALL = 0b000000000000
@@ -139,6 +143,8 @@ class Processor:
             return self.decode_system(instruction)
         elif opcode == OP_LOAD:
             return self.decode_load(instruction)
+        elif opcode == OP_OP:
+            return self.decode_op(instruction)
         else:
             raise NotImplementedError(f"Cannot decode opcode: {opcode}")
 
@@ -269,6 +275,24 @@ class Processor:
 
         return [OP_LOAD, rd, funct3, rs1, imm_11_0]
 
+    def decode_op(self, instruction):  # Decodes a register-register operation
+        rd = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        funct3 = instruction & bit_mask_prefix(3)
+        instruction >>= 3
+
+        rs1 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        rs2 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        funct7 = instruction & bit_mask_prefix(7)
+        instruction >>= 7
+
+        return [OP_OP, rd, funct3, rs1, rs2, funct7]
+
     def execute(self, instruction):  # Executes the given instruction
         opcode = instruction[0]
         if opcode == OP_LUI:
@@ -285,6 +309,8 @@ class Processor:
             self.execute_system(instruction)
         elif opcode == OP_LOAD:
             self.execute_load(instruction)
+        elif opcode == OP_OP:
+            self.execute_op(instruction)
         else:
             raise NotImplementedError(f"Cannot execute opcode: {opcode}")
 
@@ -394,6 +420,25 @@ class Processor:
             self.registers[rd] = system.memory.read_word(address)
         else:
             raise NotImplementedError(f"Cannot execute funct13: {funct3}")
+
+        self.advance_pc()
+
+    # Executes a register-register instruction
+    def execute_op(self, instruction):
+        rd = instruction[1]
+        funct3 = instruction[2]
+        rs1 = instruction[3]
+        rs2 = instruction[4]
+        funct7 = instruction[5]
+
+        if funct3 == OP_FUNCT3_SRL:
+            # The shift amount is held in the lower 5 bits of rs2
+            shift_amount = self.registers[rs2] & bit_mask_prefix(5)
+
+            result = self.registers[rs1] >> shift_amount
+            self.registers[rd] = result
+        else:
+            raise NotImplementedError(f"Cannot execute funct3: {funct3}")
 
         self.advance_pc()
 
