@@ -27,6 +27,10 @@ IMM_FUNCT3_SLTIU = 0b011
 OP_SYSTEM = 0b1110011
 SYSTEM_FUNCT12_ECALL = 0b000000000000
 
+# LOAD instruction opcode
+OP_LOAD = 0b0000011
+LOAD_FUNCT3_LW = 0b010
+
 # Assembler mnemonics for the registers
 mnemonics = ["zero",
              "ra",
@@ -133,6 +137,8 @@ class Processor:
             return self.decode_imm(instruction)
         elif opcode == OP_SYSTEM:
             return self.decode_system(instruction)
+        elif opcode == OP_LOAD:
+            return self.decode_load(instruction)
         else:
             raise NotImplementedError(f"Cannot decode opcode: {opcode}")
 
@@ -248,6 +254,21 @@ class Processor:
 
         return [OP_SYSTEM, funct12]  # Only funct12 is relevant for this instruction
 
+    def decode_load(self, instruction):  # Decodes a load instruction
+        rd = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        funct3 = instruction & bit_mask_prefix(3)
+        instruction >>= 3
+
+        rs1 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        imm_11_0 = instruction & bit_mask_prefix(12)
+        instruction >>= 12
+
+        return [OP_LOAD, rd, funct3, rs1, imm_11_0]
+
     def execute(self, instruction):  # Executes the given instruction
         opcode = instruction[0]
         if opcode == OP_LUI:
@@ -262,6 +283,8 @@ class Processor:
             self.execute_branch(instruction)
         elif opcode == OP_SYSTEM:
             self.execute_system(instruction)
+        elif opcode == OP_LOAD:
+            self.execute_load(instruction)
         else:
             raise NotImplementedError(f"Cannot execute opcode: {opcode}")
 
@@ -271,7 +294,7 @@ class Processor:
     # Overwrite the top 20 bits of the destination register and set the other 12 bits to zero
     def execute_lui(self, instruction):
         rd = instruction[1]
-        self.registers[rd] = get_two_complement(instruction[2] << 12, self.architecture)
+        self.registers[rd] = instruction[2] << 12
         self.advance_pc()
 
     # Build a 32 bit offset from the 20 bit immediate, add the offset to pc and save
@@ -321,7 +344,6 @@ class Processor:
             # Add the sign extended 12-bit immediate to rs1. Ignore overflow and store the result into rd
             value = get_two_complement(immediate, 12)
             result = ignore_overflow(self.registers[rs1] + value, self.architecture)
-            result = get_two_complement(result, self.architecture)
             self.registers[rd] = result
 
         elif funct3 == IMM_FUNCT3_SLTI:
@@ -356,6 +378,22 @@ class Processor:
             system.call(self.registers[10:16])  # The parameters are passed through a0 to a5
         else:
             raise NotImplementedError(f"Cannot execute funct12: {funct12}")
+
+        self.advance_pc()
+
+    # Executes a load instruction
+    def execute_load(self, instruction):
+        rd = instruction[1]
+        funct3 = instruction[2]
+        rs1 = instruction[3]
+        imm_11_0 = instruction[4]
+
+        if funct3 == LOAD_FUNCT3_LW:
+            offset = get_two_complement(imm_11_0, 12)
+            address = ignore_overflow(self.registers[rs1] + offset, self.architecture)
+            self.registers[rd] = system.memory.read_word(address)
+        else:
+            raise NotImplementedError(f"Cannot execute funct13: {funct3}")
 
         self.advance_pc()
 
