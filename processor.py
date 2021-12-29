@@ -35,6 +35,10 @@ SYSTEM_FUNCT12_ECALL = 0b000000000000
 OP_LOAD = 0b0000011
 LOAD_FUNCT3_LW = 0b010
 
+# STORE instruction opcode
+OP_STORE = 0b0100011
+STORE_FUNCT3_SW = 0b010
+
 # Assembler mnemonics for the registers
 mnemonics = ["zero",
              "ra",
@@ -143,6 +147,8 @@ class Processor:
             return self.decode_system(instruction)
         elif opcode == OP_LOAD:
             return self.decode_load(instruction)
+        elif opcode == OP_STORE:
+            return self.decode_store(instruction)
         elif opcode == OP_OP:
             return self.decode_op(instruction)
         else:
@@ -275,6 +281,24 @@ class Processor:
 
         return [OP_LOAD, rd, funct3, rs1, imm_11_0]
 
+    def decode_store(self, instruction):  # Decodes a store instruction
+        imm_4_0 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        funct3 = instruction & bit_mask_prefix(3)
+        instruction >>= 3
+
+        rs1 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        rs2 = instruction & bit_mask_prefix(5)
+        instruction >>= 5
+
+        imm_11_5 = instruction & bit_mask_prefix(7)
+        instruction >>= 7
+
+        return [OP_STORE, imm_4_0, funct3, rs1, rs2, imm_11_5]
+
     def decode_op(self, instruction):  # Decodes a register-register operation
         rd = instruction & bit_mask_prefix(5)
         instruction >>= 5
@@ -309,6 +333,8 @@ class Processor:
             self.execute_system(instruction)
         elif opcode == OP_LOAD:
             self.execute_load(instruction)
+        elif opcode == OP_STORE:
+            self.execute_store(instruction)
         elif opcode == OP_OP:
             self.execute_op(instruction)
         else:
@@ -419,7 +445,26 @@ class Processor:
             address = ignore_overflow(self.registers[rs1] + offset, self.architecture)
             self.registers[rd] = system.memory.read_word(address)
         else:
-            raise NotImplementedError(f"Cannot execute funct13: {funct3}")
+            raise NotImplementedError(f"Cannot execute funct3: {funct3}")
+
+        self.advance_pc()
+
+    # Executes a store instruction
+    def execute_store(self, instruction):
+        imm_4_0 = instruction[1]
+        funct3 = instruction[2]
+        rs1 = instruction[3]
+        rs2 = instruction[4]
+        imm_11_5 = instruction[5]
+
+        if funct3 == STORE_FUNCT3_SW:  # Store 32 bits
+            imm_11_0 = imm_4_0 | (imm_11_5 << 5)
+            offset = get_two_complement(imm_11_0, 12)
+            address = ignore_overflow(self.registers[rs1] + offset, self.architecture)
+            system.memory.write_word(self.registers[rs2], address)
+
+        else:
+            raise NotImplementedError(f"Cannot execute funct3: {funct3}")
 
         self.advance_pc()
 
