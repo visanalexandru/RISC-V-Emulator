@@ -26,6 +26,7 @@ IMM_FUNCT3_SLTIU = 0b011
 # OP instruction opcode - integer register-register operations
 OP_OP = 0b0110011
 OP_FUNCT3_SRL = 0b101
+OP_FUNCT3_XOR = 0b100
 
 # SYSTEM instruction opcode
 OP_SYSTEM = 0b1110011
@@ -482,6 +483,11 @@ class Processor:
 
             result = self.registers[rs1] >> shift_amount
             self.registers[rd] = result
+        elif funct3 == OP_FUNCT3_XOR:  # Perform logical xor
+            a = self.registers[rs1]
+            b = self.registers[rs2]
+            self.registers[rd] = a ^ b
+
         else:
             raise NotImplementedError(f"Cannot execute funct3: {funct3}")
 
