@@ -1,3 +1,5 @@
+import math
+
 from system import system
 
 # LUI instruction opcode
@@ -25,8 +27,11 @@ IMM_FUNCT3_SLTIU = 0b011
 
 # OP instruction opcode - integer register-register operations
 OP_OP = 0b0110011
+OP_FUNCT7_STANDARD = 0b0000000  # Standard operations
 OP_FUNCT3_SRL = 0b101
 OP_FUNCT3_XOR = 0b100
+OP_FUNC7_MULDIV = 0b0000001  # Multiply and divide operations
+OP_FUNCT3_REM = 0b110
 
 # SYSTEM instruction opcode
 OP_SYSTEM = 0b1110011
@@ -124,8 +129,6 @@ class Processor:
             self.execute(decoded)  # Execute the instruction
 
             self.debug_registers()  # Debug registers to stdout
-
-            input()
 
     def decode(self, instruction):  # Decodes the instruction and returns the instruction operands
 
@@ -477,19 +480,44 @@ class Processor:
         rs2 = instruction[4]
         funct7 = instruction[5]
 
-        if funct3 == OP_FUNCT3_SRL:
-            # The shift amount is held in the lower 5 bits of rs2
-            shift_amount = self.registers[rs2] & bit_mask_prefix(5)
+        if funct7 == OP_FUNCT7_STANDARD:
+            if funct3 == OP_FUNCT3_SRL:
+                # The shift amount is held in the lower 5 bits of rs2
+                shift_amount = self.registers[rs2] & bit_mask_prefix(5)
 
-            result = self.registers[rs1] >> shift_amount
-            self.registers[rd] = result
-        elif funct3 == OP_FUNCT3_XOR:  # Perform logical xor
-            a = self.registers[rs1]
-            b = self.registers[rs2]
-            self.registers[rd] = a ^ b
+                result = self.registers[rs1] >> shift_amount
+                self.registers[rd] = result
+            elif funct3 == OP_FUNCT3_XOR:  # Perform logical xor
+                a = self.registers[rs1]
+                b = self.registers[rs2]
+                self.registers[rd] = a ^ b
 
+            else:
+                raise NotImplementedError(f"Cannot execute funct3: {funct3}")
+        elif funct7 == OP_FUNC7_MULDIV:
+            if funct3 == OP_FUNCT3_REM:
+                #  Get the signed version of the divisor
+                divisor = get_two_complement(self.registers[rs2], self.architecture)
+                #  Get the signed version of the dividend
+                dividend = get_two_complement(self.registers[rs1], self.architecture)
+
+                if divisor == 0:
+                    result = dividend
+                else:
+                    quotient = dividend / divisor
+                    if quotient < 0:  # If the quotient is less than 0, apply the ceil operation
+                        quotient = math.ceil(quotient)
+                    else:  # Else apply the floor operation
+                        quotient = math.floor(quotient)
+
+                    result = ignore_overflow(dividend - (divisor * quotient), self.architecture)
+
+                self.registers[rd] = ignore_overflow(result, self.architecture)
+
+            else:
+                raise NotImplementedError(f"Cannot execute funct3:{funct3}")
         else:
-            raise NotImplementedError(f"Cannot execute funct3: {funct3}")
+            raise NotImplementedError(f"Cannot execute funct7: {funct7}")
 
         self.advance_pc()
 
