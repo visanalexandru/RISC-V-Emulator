@@ -4,7 +4,7 @@ class Memory:
         self.start = start  # The start address is subtracted from each address
         self.data = bytearray(size)  # The actual data
 
-    def write_word(self, data, address):
+    def write_word(self, data, address):  # Writes a 32-bit word to the given address
         address -= self.start
         byte_1 = data & 0xff
         data >>= 8
@@ -23,7 +23,7 @@ class Memory:
         self.data[address + 2] = byte_3
         self.data[address + 3] = byte_4
 
-    def read_word(self, address):
+    def read_word(self, address):  # Reads a 32-bit word from the given address
         address -= self.start
         byte_1 = self.data[address]
         byte_2 = self.data[address + 1]

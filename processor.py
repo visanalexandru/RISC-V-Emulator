@@ -24,6 +24,8 @@ OP_IMM = 0b0010011
 IMM_FUNCT3_ADDI = 0
 IMM_FUNCT3_SLTI = 0b010
 IMM_FUNCT3_SLTIU = 0b011
+IMM_FUNCT3_SLLI = 0b001
+IMM_FUNCT3_ORI = 0b110
 
 # OP instruction opcode - integer register-register operations
 OP_OP = 0b0110011
@@ -422,6 +424,14 @@ class Processor:
                 self.registers[rd] = 1
             else:
                 self.registers[rd] = 0
+        elif funct3 == IMM_FUNCT3_SLLI:  # Logical left shift
+            shift_amount = immediate & bit_mask_prefix(5)  # the shift amount is encoded in the lower 5 bits of the imm
+            operand = self.registers[rs1]
+            self.registers[rd] = ignore_overflow(operand << shift_amount, self.architecture)
+
+        elif funct3 == IMM_FUNCT3_ORI:  # Logical or with the sign-extended immediate
+            value = get_two_complement(immediate, 12)
+            self.registers[rd] = self.registers[rs1] | value
 
         else:
             raise NotImplementedError(f"Cannot execute funct3: {funct3}")
