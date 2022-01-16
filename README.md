@@ -2,7 +2,7 @@
 
 This is an simple RISCV-V machine code emulator. It can parse and emulate a hexdump of a compiled executable.  
 The goal of the implementation is to correctly emulate the given [tests](tests/).
-You can find the RISC-V core specifications [here](https://riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf)
+You can find the RISC-V core specifications [here](https://riscv.org/wp-content/uploads/2017/05/riscv-spec-v2.2.pdf).
 
 Currently, the emulator can execute the following instructions: 
 
