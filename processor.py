@@ -121,16 +121,17 @@ class Processor:
     def cycle(self):
         to_execute = system.memory.read_word(self.pc)  # Fetch a new instruction
         if to_execute == 0:  # There is no instruction at the current address
-            print(f"Skipping over memory address:{self.pc}")
+            if system.debug:
+                print(f"Skipping over memory address:{self.pc}")
             self.advance_pc()
         else:
             decoded = self.decode(to_execute)  # Decode the instruction
 
-            print(f"Execute {decoded} , OPCODE: {bin(decoded[0])}")
-
             self.execute(decoded)  # Execute the instruction
 
-            self.debug_registers()  # Debug registers to stdout
+            if system.debug:
+                print(f"Execute {decoded} , OPCODE: {bin(decoded[0])}")
+                self.debug_registers()  # Debug registers to stdout
 
     def decode(self, instruction):  # Decodes the instruction and returns the instruction operands
 

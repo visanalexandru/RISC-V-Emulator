@@ -10,6 +10,7 @@ def execute_test(filename):
 
     system.memory = memory
     system.terminate = False
+    # system.debug = True - uncomment this line to debug the registers to stdout
 
     print(f"Start location: {hex(start_location)}")
     cpu = Processor()

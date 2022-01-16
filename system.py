@@ -5,6 +5,7 @@ class SystemException(Exception):  # Throw when an unknown system code is called
 class System:
     def __init__(self):
         self.terminate = False
+        self.debug = False
 
     def call(self, parameters):
         if parameters[0] == 1:
