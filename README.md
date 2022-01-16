@@ -22,3 +22,12 @@ Currently, the emulator can execute the following instructions:
 - [x] [ECALL](processor.py#L443) - system call instruction
 - [x] [LW](processor.py#L457) - load word from memory
 - [x] [SW](processor.py#L474) - store word to memory
+
+
+## Implementation details
+
+You can see how each CPU cycle is executed [here](processor.py#L121).  
+The program memory is simulated using a big byte array. The class that manages the memory can be found [here](memory.py).  
+
+Each cycle, a new instruction is fetched from memory, by reading a new 32-bit WORD from the address given by PC. 
+Next, the CPU [decodes](processor.py#L136) the new instruction and [executes](processor.py#L327) it.
